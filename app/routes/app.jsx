@@ -20,9 +20,9 @@ export default function App() {
     <AppProvider isEmbeddedApp apiKey={apiKey}>
       <NavMenu>
         <Link to="/app" rel="home">
-          Home
+          Tiered Rewards
         </Link>
-        <Link to="/app/additional">Additional page</Link>
+        <Link to="/app/tier-settings">Tier Settings</Link>
       </NavMenu>
       <Outlet />
     </AppProvider>
