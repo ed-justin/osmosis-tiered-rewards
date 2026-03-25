@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import {
   useLoaderData,
   useSubmit,
@@ -124,6 +124,7 @@ export const action = async ({ request, params }) => {
   const { admin } = await authenticate.admin(request);
   const formData = await request.formData();
   const tiersJson = formData.get("tiers");
+  const intent = formData.get("intent");
   const discountNodeId = normalizeDiscountNodeId(params?.id);
 
   let tiers;
@@ -156,6 +157,54 @@ export const action = async ({ request, params }) => {
   tiers.sort((a, b) => b.minSubtotal - a.minSubtotal);
 
   const configValue = JSON.stringify({ tiers });
+
+  if (intent === "create_discount") {
+    const functionId = await getDiscountFunctionId(admin);
+    if (!functionId) {
+      return json(
+        {
+          error:
+            "Could not find the tiered rewards discount function in Shopify Functions.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const createResult = await createAutomaticAppDiscount(admin, functionId);
+    if (!createResult.ok) {
+      return json({ error: createResult.error }, { status: 400 });
+    }
+
+    const createdDiscountNodeId = createResult.discountNodeId;
+
+    // Save both app defaults and runtime node config after creation.
+    const appInstallationId = await getAppInstallationId(admin);
+    const appSave = await saveTierConfigMetafield(
+      admin,
+      appInstallationId,
+      configValue
+    );
+    if (!appSave.ok) {
+      return json({ error: appSave.error }, { status: 400 });
+    }
+
+    const nodeSave = await saveTierConfigMetafield(
+      admin,
+      createdDiscountNodeId,
+      configValue
+    );
+    if (!nodeSave.ok) {
+      return json(
+        {
+          error: `Discount created, but tier sync failed: ${nodeSave.error}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    const shortId = createdDiscountNodeId.split("/").pop();
+    return redirect(`/app/tier-settings/${shortId}`);
+  }
 
   const appInstallationId = await getAppInstallationId(admin);
   const appSave = await saveTierConfigMetafield(
@@ -216,6 +265,75 @@ async function getAppInstallationId(admin) {
   `);
   const data = await response.json();
   return data.data.currentAppInstallation.id;
+}
+
+async function getDiscountFunctionId(admin) {
+  const response = await admin.graphql(`
+    {
+      shopifyFunctions(first: 50) {
+        nodes {
+          id
+          title
+          apiType
+        }
+      }
+    }
+  `);
+  const data = await response.json();
+  const nodes = data?.data?.shopifyFunctions?.nodes || [];
+  const match = nodes.find((n) => {
+    const title = (n?.title || "").toLowerCase();
+    const apiType = (n?.apiType || "").toLowerCase();
+    return apiType.includes("discount") && title.includes("tier");
+  });
+  return match?.id || null;
+}
+
+async function createAutomaticAppDiscount(admin, functionId) {
+  const startsAt = new Date().toISOString();
+  const response = await admin.graphql(
+    `mutation CreateTieredRewardsDiscount($automaticAppDiscount: DiscountAutomaticAppInput!) {
+      discountAutomaticAppCreate(automaticAppDiscount: $automaticAppDiscount) {
+        automaticAppDiscount {
+          discountId
+          title
+          status
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }`,
+    {
+      variables: {
+        automaticAppDiscount: {
+          title: "Tiered Rewards Auto",
+          functionId,
+          startsAt,
+          combinesWith: {
+            orderDiscounts: true,
+            productDiscounts: true,
+            shippingDiscounts: true,
+          },
+        },
+      },
+    }
+  );
+  const data = await response.json();
+  const payload = data?.data?.discountAutomaticAppCreate;
+  const userErrors = payload?.userErrors || [];
+  if (userErrors.length > 0) {
+    return {
+      ok: false,
+      error: userErrors.map((e) => e.message).join(", "),
+    };
+  }
+  const discountNodeId = payload?.automaticAppDiscount?.discountId;
+  if (!discountNodeId) {
+    return { ok: false, error: "Shopify did not return a discount node ID." };
+  }
+  return { ok: true, discountNodeId };
 }
 
 async function saveTierConfigMetafield(admin, ownerId, configValue) {
@@ -312,6 +430,26 @@ export default function TierSettings() {
     const formData = new FormData();
     formData.set("tiers", JSON.stringify(validTiers));
     submit(formData, { method: "POST" });
+  }, [tiers, submit]);
+
+  const handleCreateDiscount = useCallback(() => {
+    const validTiers = tiers.filter(
+      (t) => t.minSubtotal > 0 && t.percentage > 0 && t.percentage <= 100
+    );
+    if (validTiers.length === 0) {
+      setError("You need at least one valid tier.");
+      return;
+    }
+    const thresholds = validTiers.map((t) => t.minSubtotal);
+    if (new Set(thresholds).size !== thresholds.length) {
+      setError("Each tier must have a unique minimum subtotal.");
+      return;
+    }
+    setError(null);
+    const fd = new FormData();
+    fd.set("intent", "create_discount");
+    fd.set("tiers", JSON.stringify(validTiers));
+    submit(fd, { method: "POST" });
   }, [tiers, submit]);
 
   // Build the data table rows for the "CS Quick Reference" card
@@ -450,6 +588,15 @@ export default function TierSettings() {
 
               <InlineStack gap="300">
                 <Button onClick={addTier}>+ Add tier</Button>
+                {!discountNodeId && (
+                  <Button
+                    variant="secondary"
+                    onClick={handleCreateDiscount}
+                    loading={isSaving}
+                  >
+                    Create Shopify discount
+                  </Button>
+                )}
                 <Button
                   variant="primary"
                   onClick={handleSave}
