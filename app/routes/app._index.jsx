@@ -12,6 +12,8 @@ import {
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 
+const UI_VERSION = "TMP-2026-03-26-1";
+
 const DEFAULT_TIERS = [
   { minSubtotal: 1000, percentage: 6 },
   { minSubtotal: 3500, percentage: 10 },
@@ -36,7 +38,10 @@ export default function Index() {
                 <Text as="h2" variant="headingMd">
                   Tiered rewards discount is live
                 </Text>
-                <Badge tone="success">Active</Badge>
+                <InlineStack gap="200">
+                  <Badge tone="info">UI {UI_VERSION}</Badge>
+                  <Badge tone="success">Active</Badge>
+                </InlineStack>
               </InlineStack>
               <Text as="p" variant="bodyMd" tone="subdued">
                 This app applies an automatic order discount based on cart

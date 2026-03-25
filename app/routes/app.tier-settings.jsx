@@ -38,6 +38,7 @@ const DEFAULT_TIERS = [
   { minSubtotal: 3500, percentage: 10 },
   { minSubtotal: 1000, percentage: 6 },
 ];
+const UI_VERSION = "TMP-2026-03-26-1";
 
 // ─── LOADER ──────────────────────────────────────────────────────────────
 export const loader = async ({ request, params }) => {
@@ -332,6 +333,12 @@ export default function TierSettings() {
       subtitle="Configure automatic discount tiers based on cart subtotal. Discounts evaluate after BSS B2B catalog pricing, excluding tax and shipping."
     >
       <Layout>
+        <Layout.Section>
+          <Banner title={`UI Version: ${UI_VERSION}`} tone="info">
+            <p>Use this temporary marker to confirm the latest deployment.</p>
+          </Banner>
+        </Layout.Section>
+
         {/* ── Success / Error banners ────────────────────────────────── */}
         {actionData?.success && !isSaving && !error && (
           <Layout.Section>
