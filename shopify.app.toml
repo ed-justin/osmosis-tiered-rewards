@@ -2,7 +2,7 @@
 
 client_id = "ccc205ac4a6c78dca3eeeafa8c502a63"
 name = "osmosis-tiered-rewards"
-application_url = "https://osmosisbeauty.pro"
+application_url = "https://osmosis.wp1.host"
 embedded = true
 
 [build]
@@ -24,4 +24,4 @@ api_version = "2026-04"
 scopes = "write_metaobject_definitions,write_metaobjects,write_products"
 
 [auth]
-redirect_urls = [ "https://osmosisbeauty.pro/api/auth" ]
+redirect_urls = [ "https://osmosis.wp1.host/api/auth" ]
