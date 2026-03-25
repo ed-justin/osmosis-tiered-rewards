@@ -1,0 +1,4 @@
+{
+  "name": "Tiered Rewards Discount",
+  "description": "Automatically applies a percentage discount based on cart subtotal tiers. Designed to work alongside BSS B2B catalog pricing."
+}

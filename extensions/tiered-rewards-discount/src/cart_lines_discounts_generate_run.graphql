@@ -1,0 +1,24 @@
+query CartInput {
+  cart {
+    lines {
+      id
+      merchandise {
+        __typename
+        ... on ProductVariant {
+          id
+        }
+      }
+    }
+    cost {
+      subtotalAmount {
+        amount
+      }
+    }
+  }
+  discount {
+    discountClasses
+    metafield(namespace: "tiered-rewards", key: "config") {
+      value
+    }
+  }
+}

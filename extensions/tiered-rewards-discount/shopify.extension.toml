@@ -1,0 +1,17 @@
+api_version = "2026-01"
+
+[[extensions]]
+name = "tiered-rewards-discount"
+handle = "tiered-rewards-discount"
+type = "function"
+uid = "05f7bcbe-fd42-bd90-2423-fe69620deddfba64cbe2"
+description = "Automatically applies a percentage discount based on cart subtotal tiers."
+
+  [[extensions.targeting]]
+  target = "cart.lines.discounts.generate.run"
+  input_query = "src/cart_lines_discounts_generate_run.graphql"
+  export = "cart-lines-discounts-generate-run"
+
+  [extensions.build]
+  command = ""
+  path = "dist/function.wasm"

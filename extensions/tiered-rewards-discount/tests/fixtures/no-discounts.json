@@ -1,0 +1,36 @@
+{
+  "cart": {
+    "lines": [
+      {
+        "id": "gid://shopify/CartLine/1",
+        "quantity": 1,
+        "merchandise": {
+          "__typename": "ProductVariant",
+          "id": "gid://shopify/ProductVariant/1",
+          "product": {
+            "id": "gid://shopify/Product/1"
+          }
+        },
+        "cost": {
+          "amountPerQuantity": {
+            "amount": "50.00",
+            "currencyCode": "USD"
+          },
+          "totalAmount": {
+            "amount": "50.00",
+            "currencyCode": "USD"
+          }
+        }
+      }
+    ],
+    "cost": {
+      "subtotalAmount": {
+        "amount": "50.00",
+        "currencyCode": "USD"
+      }
+    }
+  },
+  "discountNode": {
+    "metafield": null
+  }
+}
