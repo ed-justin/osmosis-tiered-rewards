@@ -12,7 +12,7 @@ import {
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 
-const UI_VERSION = "TMP-2026-03-26-1";
+const UI_VERSION = "TMP-2026-03-26-2";
 
 const DEFAULT_TIERS = [
   { minSubtotal: 1000, percentage: 6 },

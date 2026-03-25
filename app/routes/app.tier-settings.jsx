@@ -38,7 +38,7 @@ const DEFAULT_TIERS = [
   { minSubtotal: 3500, percentage: 10 },
   { minSubtotal: 1000, percentage: 6 },
 ];
-const UI_VERSION = "TMP-2026-03-26-1";
+const UI_VERSION = "TMP-2026-03-26-2";
 
 // ─── LOADER ──────────────────────────────────────────────────────────────
 export const loader = async ({ request, params }) => {
