@@ -6,6 +6,7 @@ import {
 } from "@shopify/shopify-app-remix/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
+import { ensureTieredRewardsSetup } from "./tiered-rewards.server";
 
 const appUrl =
   process.env.SHOPIFY_APP_URL ||
@@ -21,6 +22,14 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
+  hooks: {
+    afterAuth: async ({ admin }) => {
+      const result = await ensureTieredRewardsSetup(admin);
+      if (!result.ok) {
+        console.error("Tiered rewards auto-setup failed", result.error);
+      }
+    },
+  },
   future: {
     unstable_newEmbeddedAuthStrategy: true,
     expiringOfflineAccessTokens: true,
