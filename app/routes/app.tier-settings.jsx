@@ -229,7 +229,7 @@ export default function TierSettings() {
   return (
     <Page
       title="Tiered Rewards Settings"
-      subtitle="Configure automatic discount tiers based on cart subtotal. Discounts evaluate after BSS B2B catalog pricing, excluding tax and shipping."
+      subtitle="Configure automatic discount tiers based on cart subtotal. The threshold uses the full cart subtotal, but the discount applies only to eligible collection products."
     >
       <Layout>
         <Layout.Section>
@@ -296,8 +296,9 @@ export default function TierSettings() {
               </Text>
               <Text as="p" variant="bodyMd" tone="subdued">
                 Each tier defines a minimum cart subtotal and the discount
-                percentage to apply. The highest qualifying tier wins. Cart
-                subtotal is evaluated after BSS B2B pricing adjustments.
+                percentage to apply to eligible collection products. The
+                highest qualifying tier wins. Cart subtotal is evaluated after
+                BSS B2B pricing adjustments.
               </Text>
 
               <Divider />
@@ -371,7 +372,8 @@ export default function TierSettings() {
               </InlineStack>
               <Text as="p" variant="bodyMd" tone="subdued">
                 Use this table when creating manual/draft orders. The discount
-                applies automatically at checkout for storefront orders.
+                applies only to eligible collection products once the cart
+                reaches the tier subtotal.
               </Text>
               {referenceRows.length > 0 ? (
                 <DataTable
@@ -398,8 +400,8 @@ export default function TierSettings() {
                 <Text as="p" variant="bodyMd">
                   <strong>Storefront orders:</strong> The discount is applied
                   automatically at checkout. No promo code is needed because the
-                  function evaluates the cart subtotal and applies the highest
-                  qualifying tier.
+                  function evaluates the full cart subtotal and applies the
+                  highest qualifying tier only to eligible collection products.
                 </Text>
                 <Text as="p" variant="bodyMd">
                   <strong>Admin / Draft orders:</strong> When CS creates an

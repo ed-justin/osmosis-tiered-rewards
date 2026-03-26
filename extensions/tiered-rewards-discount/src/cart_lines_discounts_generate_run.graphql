@@ -6,6 +6,9 @@ query CartInput {
         __typename
         ... on ProductVariant {
           id
+          product {
+            inAnyCollection(ids: ["gid://shopify/Collection/527357477083"])
+          }
         }
       }
     }

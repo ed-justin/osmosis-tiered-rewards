@@ -141,7 +141,7 @@ export async function createAutomaticAppDiscount(admin, functionId) {
         automaticAppDiscount: {
           title: DISCOUNT_TITLE,
           functionId,
-          discountClasses: ["ORDER"],
+          discountClasses: ["PRODUCT"],
           startsAt,
           combinesWith: {
             orderDiscounts: true,

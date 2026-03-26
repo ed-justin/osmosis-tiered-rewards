@@ -48,8 +48,9 @@ export default function Index() {
                 </InlineStack>
               </InlineStack>
               <Text as="p" variant="bodyMd" tone="subdued">
-                This app applies an automatic order discount based on cart
-                subtotal tiers. Highest qualifying tier wins.
+                This app applies an automatic discount to eligible collection
+                products based on cart subtotal tiers. Highest qualifying tier
+                wins.
               </Text>
               <InlineStack gap="300">
                 <Button url="shopify:admin/discounts" target="_top">

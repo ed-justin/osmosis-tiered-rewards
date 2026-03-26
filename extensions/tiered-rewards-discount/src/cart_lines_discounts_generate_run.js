@@ -53,9 +53,23 @@ function getRewardCode(tier, tiers) {
   return `REWARDS${index + 1}`;
 }
 
+function getEligibleCartLineTargets(lines) {
+  return lines
+    .filter((line) => {
+      const merchandise = line?.merchandise;
+      if (merchandise?.__typename !== "ProductVariant") return false;
+      return merchandise?.product?.inAnyCollection === true;
+    })
+    .map((line) => ({
+      cartLine: {
+        id: line.id,
+      },
+    }));
+}
+
 export function cartLinesDiscountsGenerateRun(input) {
   const discountClasses = input?.discount?.discountClasses || [];
-  if (!discountClasses.includes("ORDER")) {
+  if (!discountClasses.includes("PRODUCT")) {
     return { operations: [] };
   }
 
@@ -72,21 +86,20 @@ export function cartLinesDiscountsGenerateRun(input) {
 
   const thresholdLabel = Math.round(tier.minSubtotal).toLocaleString("en-US");
   const rewardCode = getRewardCode(tier, tiers);
+  const eligibleTargets = getEligibleCartLineTargets(input?.cart?.lines || []);
+
+  if (eligibleTargets.length === 0) {
+    return { operations: [] };
+  }
 
   return {
     operations: [
       {
-        orderDiscountsAdd: {
+        productDiscountsAdd: {
           candidates: [
             {
-              message: `${rewardCode}: ${tier.percentage}% off orders $${thresholdLabel}+`,
-              targets: [
-                {
-                  orderSubtotal: {
-                    excludedCartLineIds: [],
-                  },
-                },
-              ],
+              message: `${rewardCode}: ${tier.percentage}% off eligible products on orders $${thresholdLabel}+`,
+              targets: eligibleTargets,
               value: {
                 percentage: {
                   value: tier.percentage,
@@ -94,7 +107,7 @@ export function cartLinesDiscountsGenerateRun(input) {
               },
             },
           ],
-          selectionStrategy: "FIRST",
+          selectionStrategy: "ALL",
         },
       },
     ],
