@@ -310,6 +310,7 @@ async function createAutomaticAppDiscount(admin, functionId) {
         automaticAppDiscount: {
           title: "Tiered Rewards Auto",
           functionId,
+          discountClasses: ["ORDER"],
           startsAt,
           combinesWith: {
             orderDiscounts: true,
