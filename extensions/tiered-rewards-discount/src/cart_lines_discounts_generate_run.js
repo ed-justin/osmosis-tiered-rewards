@@ -42,6 +42,17 @@ function findMatchingTier(subtotal, tiers) {
   return tiers.find((tier) => subtotal >= tier.minSubtotal);
 }
 
+function getRewardCode(tier, tiers) {
+  const ascendingTiers = [...tiers].sort((a, b) => a.minSubtotal - b.minSubtotal);
+  const index = ascendingTiers.findIndex(
+    (candidate) =>
+      candidate.minSubtotal === tier.minSubtotal &&
+      candidate.percentage === tier.percentage,
+  );
+
+  return `REWARDS${index + 1}`;
+}
+
 export function cartLinesDiscountsGenerateRun(input) {
   const discountClasses = input?.discount?.discountClasses || [];
   if (!discountClasses.includes("ORDER")) {
@@ -60,6 +71,7 @@ export function cartLinesDiscountsGenerateRun(input) {
   }
 
   const thresholdLabel = Math.round(tier.minSubtotal).toLocaleString("en-US");
+  const rewardCode = getRewardCode(tier, tiers);
 
   return {
     operations: [
@@ -67,7 +79,7 @@ export function cartLinesDiscountsGenerateRun(input) {
         orderDiscountsAdd: {
           candidates: [
             {
-              message: `Tiered Rewards: ${tier.percentage}% off orders $${thresholdLabel}+`,
+              message: `${rewardCode}: ${tier.percentage}% off orders $${thresholdLabel}+`,
               targets: [
                 {
                   orderSubtotal: {

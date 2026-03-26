@@ -21,6 +21,10 @@ const DEFAULT_TIERS = [
   { minSubtotal: 15000, percentage: 20 },
 ];
 
+function getRewardCode(index) {
+  return `REWARDS${index + 1}`;
+}
+
 export const loader = async ({ request }) => {
   await authenticate.admin(request);
   return null;
@@ -61,13 +65,14 @@ export default function Index() {
         <Layout.Section variant="oneThird">
           <Card>
             <BlockStack gap="300">
-              <Text as="h3" variant="headingMd">
-                Current Tier Targets
-              </Text>
+                <Text as="h3" variant="headingMd">
+                  Current Tier Targets
+                </Text>
               <List type="bullet">
-                {DEFAULT_TIERS.map((tier) => (
+                {DEFAULT_TIERS.map((tier, index) => (
                   <List.Item key={tier.minSubtotal}>
-                    ${tier.minSubtotal.toLocaleString()}+ : {tier.percentage}%
+                    {getRewardCode(index)}: {tier.percentage}% at $
+                    {tier.minSubtotal.toLocaleString()}+
                   </List.Item>
                 ))}
               </List>

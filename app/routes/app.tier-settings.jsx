@@ -40,6 +40,10 @@ const DEFAULT_TIERS = [
 ];
 const UI_VERSION = "TMP-2026-03-26-2";
 
+function getRewardCodeByDescendingIndex(index, total) {
+  return `REWARDS${total - index}`;
+}
+
 // ─── LOADER ──────────────────────────────────────────────────────────────
 export const loader = async ({ request, params }) => {
   const { admin } = await authenticate.admin(request);
@@ -308,7 +312,7 @@ async function createAutomaticAppDiscount(admin, functionId) {
     {
       variables: {
         automaticAppDiscount: {
-          title: "Tiered Rewards Auto",
+          title: "REWARDS",
           functionId,
           discountClasses: ["ORDER"],
           startsAt,
@@ -459,11 +463,9 @@ export default function TierSettings() {
     .sort((a, b) => b.minSubtotal - a.minSubtotal);
 
   const referenceRows = sortedTiers.map((tier, i) => {
-    const nextTier = sortedTiers[i + 1];
-    const rangeLabel = nextTier
-      ? `$${tier.minSubtotal.toLocaleString()} +`
-      : `$${tier.minSubtotal.toLocaleString()} +`;
-    return [rangeLabel, `${tier.percentage}%`];
+    const rewardCode = getRewardCodeByDescendingIndex(i, sortedTiers.length);
+    const rangeLabel = `$${tier.minSubtotal.toLocaleString()} +`;
+    return [rewardCode, rangeLabel, `${tier.percentage}%`];
   });
 
   return (
@@ -550,6 +552,11 @@ export default function TierSettings() {
 
               {tiers.map((tier, index) => (
                 <InlineStack key={index} gap="300" align="center" blockAlign="end">
+                  <Box width="110px">
+                    <Text as="p" variant="bodyMd">
+                      {getRewardCodeByDescendingIndex(index, tiers.length)}
+                    </Text>
+                  </Box>
                   <Box width="240px">
                     <TextField
                       label={`Tier ${index + 1} — Min Subtotal ($)`}
@@ -626,8 +633,8 @@ export default function TierSettings() {
               </Text>
               {referenceRows.length > 0 ? (
                 <DataTable
-                  columnContentTypes={["text", "text"]}
-                  headings={["Cart Subtotal", "Discount"]}
+                  columnContentTypes={["text", "text", "text"]}
+                  headings={["Reward", "Cart Subtotal", "Discount"]}
                   rows={referenceRows}
                 />
               ) : (
