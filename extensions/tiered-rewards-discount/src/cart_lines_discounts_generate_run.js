@@ -5,14 +5,24 @@ const DEFAULT_TIERS = [
   { minSubtotal: 1000, percentage: 6 },
 ];
 
+const CANADA_TIERS = [
+  { minSubtotal: 15000, percentage: 10 },
+  { minSubtotal: 7500, percentage: 6 },
+];
+
+function isCanadaShopper(input) {
+  return input?.cart?.buyerIdentity?.customer?.hasAnyTag === true;
+}
+
 function getConfiguredTiers(input) {
+  const fallbackTiers = isCanadaShopper(input) ? CANADA_TIERS : DEFAULT_TIERS;
   const raw = input?.discount?.metafield?.value;
-  if (!raw) return DEFAULT_TIERS;
+  if (!raw) return fallbackTiers;
 
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed?.tiers) || parsed.tiers.length === 0) {
-      return DEFAULT_TIERS;
+      return fallbackTiers;
     }
 
     const tiers = parsed.tiers
@@ -32,9 +42,9 @@ function getConfiguredTiers(input) {
       }))
       .sort((a, b) => b.minSubtotal - a.minSubtotal);
 
-    return tiers.length ? tiers : DEFAULT_TIERS;
+    return tiers.length ? tiers : fallbackTiers;
   } catch {
-    return DEFAULT_TIERS;
+    return fallbackTiers;
   }
 }
 

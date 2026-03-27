@@ -1,5 +1,10 @@
 query CartInput {
   cart {
+    buyerIdentity {
+      customer {
+        hasAnyTag(tags: ["Canada Shopper", "MD-CAN Shopper"])
+      }
+    }
     lines {
       id
       merchandise {

@@ -32,7 +32,7 @@ import {
   saveJsonMetafield,
 } from "../tiered-rewards.server";
 
-const UI_VERSION = "TMP-2026-03-26-3";
+const UI_VERSION = "TMP-2026-03-27-1";
 
 function getRewardCodeByDescendingIndex(index, total) {
   return `REWARDS${total - index}`;
@@ -235,6 +235,15 @@ export default function TierSettings() {
         <Layout.Section>
           <Banner title={`UI Version: ${UI_VERSION}`} tone="info">
             <p>Automatic discount setup now runs after install/auth.</p>
+          </Banner>
+        </Layout.Section>
+        <Layout.Section>
+          <Banner title="Canada shopper logic active" tone="info">
+            <p>
+              Customers tagged with <strong>Canada Shopper</strong> or{" "}
+              <strong>MD-CAN Shopper</strong> use the Canada tier table:
+              REWARDS1 at 6% for $7,500+ and REWARDS2 at 10% for $15,000+.
+            </p>
           </Banner>
         </Layout.Section>
 
