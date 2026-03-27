@@ -15,7 +15,11 @@ function isCanadaShopper(input) {
 }
 
 function getConfiguredTiers(input) {
-  const fallbackTiers = isCanadaShopper(input) ? CANADA_TIERS : DEFAULT_TIERS;
+  if (isCanadaShopper(input)) {
+    return CANADA_TIERS;
+  }
+
+  const fallbackTiers = DEFAULT_TIERS;
   const raw = input?.discount?.metafield?.value;
   if (!raw) return fallbackTiers;
 
