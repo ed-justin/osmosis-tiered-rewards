@@ -87,6 +87,11 @@ export function cartLinesDiscountsGenerateRun(input) {
     return { operations: [] };
   }
 
+  const enteredCodes = input?.enteredDiscountCodes || [];
+  if (enteredCodes.length > 0) {
+    return { operations: [] };
+  }
+
   const subtotal = Number(input?.cart?.cost?.subtotalAmount?.amount || 0);
   if (!Number.isFinite(subtotal) || subtotal <= 0) {
     return { operations: [] };
