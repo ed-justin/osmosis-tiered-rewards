@@ -92,10 +92,18 @@ export function cartLinesDiscountsGenerateRun(input) {
     return { operations: [] };
   }
 
-  const subtotal = Number(input?.cart?.cost?.subtotalAmount?.amount || 0);
-  if (!Number.isFinite(subtotal) || subtotal <= 0) {
+  const presentmentSubtotal = Number(input?.cart?.cost?.subtotalAmount?.amount || 0);
+  if (!Number.isFinite(presentmentSubtotal) || presentmentSubtotal <= 0) {
     return { operations: [] };
   }
+
+  // Tier thresholds are defined in the shop's default currency (USD), but
+  // cart.cost.subtotalAmount.amount is in the buyer's presentment currency.
+  // Convert back to shop currency using Shopify Markets' configured rate so
+  // GBP/CAD/EUR shoppers are evaluated against the same USD thresholds.
+  const rate = Number(input?.presentmentCurrencyRate);
+  const conversionRate = Number.isFinite(rate) && rate > 0 ? rate : 1;
+  const subtotal = presentmentSubtotal / conversionRate;
 
   const tiers = getConfiguredTiers(input);
   const tier = findMatchingTier(subtotal, tiers);
