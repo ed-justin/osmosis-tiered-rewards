@@ -25,7 +25,9 @@ const BF_PROMO_CANADA_TIERS = [
   { minSubtotal: 2000, percentage: 10, code: "BF10-CAN" },
 ];
 
-function isBfPromoActive(input) {
+// Manual override toggle from the app settings, used for testing the promo
+// outside of its scheduled window.
+function isBfPromoManuallyEnabled(input) {
   const raw = input?.discount?.metafield?.value;
   if (!raw) return false;
 
@@ -35,6 +37,13 @@ function isBfPromoActive(input) {
   } catch {
     return false;
   }
+}
+
+// The promo is active when EITHER its scheduled window is live (evaluated in
+// the store's timezone via the input query) OR the manual toggle is on.
+function isBfPromoActive(input) {
+  const scheduledActive = input?.shop?.localTime?.bfPromoWindow === true;
+  return scheduledActive || isBfPromoManuallyEnabled(input);
 }
 
 function isCanadaShopper(input) {

@@ -341,18 +341,24 @@ export default function TierSettings() {
                   BF Promo Override
                 </Text>
                 <Badge tone={bfPromoEnabled ? "success" : "new"}>
-                  {bfPromoEnabled ? "Active" : "Off"}
+                  {bfPromoEnabled ? "Forced on (test)" : "Auto (scheduled)"}
                 </Badge>
               </InlineStack>
               <Text as="p" variant="bodyMd" tone="subdued">
-                When enabled and saved, the promo tables below fully replace the
-                normal reward tiers (Canada shoppers use their own promo table).
-                The discount still applies only to eligible collection products,
-                evaluated against the full cart subtotal in USD. Turn off after
-                the promotion to restore the normal rewards.
+                This promo runs <strong>automatically from 12:00 AM MDT on
+                7/9 through 11:59 PM MDT on 7/14</strong> — no action needed for
+                go-live. During that window the tables below fully replace the
+                normal reward tiers (Canada shoppers use their own promo table),
+                applying only to eligible collection products, evaluated against
+                the full cart subtotal in USD.
+              </Text>
+              <Text as="p" variant="bodyMd" tone="subdued">
+                The toggle below is a <strong>manual override for testing</strong>{" "}
+                outside that window. Leave it off for normal operation — the
+                schedule turns the promo on and off on its own.
               </Text>
               <Checkbox
-                label="Enable BF promo override"
+                label="Force BF promo on now (manual test override)"
                 checked={bfPromoEnabled}
                 onChange={(value) => setBfPromoEnabled(value)}
               />

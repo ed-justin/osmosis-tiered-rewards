@@ -29,6 +29,16 @@ query CartInput {
       value
     }
   }
+  shop {
+    localTime {
+      # BF promo window, expressed in the store's timezone (Mountain Time).
+      # 12:00 AM MDT 7/9 through 11:59 PM MDT 7/14, 2026.
+      bfPromoWindow: dateTimeBetween(
+        startDateTime: "2026-07-09T00:00:00"
+        endDateTime: "2026-07-14T23:59:59"
+      )
+    }
+  }
   enteredDiscountCodes {
     code
   }
