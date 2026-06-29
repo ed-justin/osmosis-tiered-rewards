@@ -10,6 +10,33 @@ const CANADA_TIERS = [
   { minSubtotal: 7500, percentage: 6 },
 ];
 
+// Temporary marketing promotion. When enabled via the `bfPromo.enabled` flag in
+// the discount config metafield, these tables fully REPLACE the normal reward
+// tiers (a clean override). Every band is >= the normal reward, so nobody is
+// downgraded. The `code` is surfaced in the discount line label for reporting.
+const BF_PROMO_TIERS = [
+  { minSubtotal: 5000, percentage: 25, code: "BF25" },
+  { minSubtotal: 2000, percentage: 20, code: "BF20" },
+  { minSubtotal: 1000, percentage: 10, code: "BF10" },
+];
+
+const BF_PROMO_CANADA_TIERS = [
+  { minSubtotal: 5000, percentage: 15, code: "BF15-CAN" },
+  { minSubtotal: 2000, percentage: 10, code: "BF10-CAN" },
+];
+
+function isBfPromoActive(input) {
+  const raw = input?.discount?.metafield?.value;
+  if (!raw) return false;
+
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed?.bfPromo?.enabled === true;
+  } catch {
+    return false;
+  }
+}
+
 function isCanadaShopper(input) {
   return input?.cart?.buyerIdentity?.customer?.hasAnyTag === true;
 }
@@ -67,11 +94,12 @@ function getRewardCode(tier, tiers) {
   return `REWARDS${index + 1}`;
 }
 
-function getEligibleCartLineTargets(lines) {
+function getEligibleCartLineTargets(lines, excludeVariantId) {
   return lines
     .filter((line) => {
       const merchandise = line?.merchandise;
       if (merchandise?.__typename !== "ProductVariant") return false;
+      if (excludeVariantId && merchandise.id === excludeVariantId) return false;
       return merchandise?.product?.inAnyCollection === true;
     })
     .map((line) => ({
@@ -79,6 +107,38 @@ function getEligibleCartLineTargets(lines) {
         id: line.id,
       },
     }));
+}
+
+function parseGwpConfig(input) {
+  const raw = input?.discount?.metafield?.value;
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw);
+    const gwp = parsed?.gwp;
+    if (!gwp || gwp.enabled !== true) return null;
+
+    const minSubtotalUsd = Number(gwp.minSubtotalUsd);
+    const giftVariantId =
+      typeof gwp.giftVariantId === "string" && gwp.giftVariantId.length > 0
+        ? gwp.giftVariantId
+        : null;
+
+    if (!Number.isFinite(minSubtotalUsd) || minSubtotalUsd <= 0) return null;
+    if (!giftVariantId) return null;
+
+    return { minSubtotalUsd, giftVariantId };
+  } catch {
+    return null;
+  }
+}
+
+function findGwpLine(lines, giftVariantId) {
+  return lines.find(
+    (line) =>
+      line?.merchandise?.__typename === "ProductVariant" &&
+      line.merchandise.id === giftVariantId,
+  );
 }
 
 export function cartLinesDiscountsGenerateRun(input) {
@@ -105,23 +165,58 @@ export function cartLinesDiscountsGenerateRun(input) {
   const conversionRate = Number.isFinite(rate) && rate > 0 ? rate : 1;
   const subtotal = presentmentSubtotal / conversionRate;
 
-  const tiers = getConfiguredTiers(input);
+  const lines = input?.cart?.lines || [];
+  const operations = [];
+
+  // GWP: if enabled and the configured gift variant is in the cart at the
+  // configured USD threshold, discount that line to 100%. Resolved first so
+  // the gift line can be excluded from tier targets (avoids stacking a tier %
+  // discount on top of a 100% off, which would otherwise produce a confusing
+  // discount breakdown).
+  const gwpConfig = parseGwpConfig(input);
+  const gwpLine =
+    gwpConfig && subtotal >= gwpConfig.minSubtotalUsd
+      ? findGwpLine(lines, gwpConfig.giftVariantId)
+      : null;
+
+  if (gwpLine) {
+    const gwpThresholdLabel = Math.round(gwpConfig.minSubtotalUsd).toLocaleString("en-US");
+    operations.push({
+      productDiscountsAdd: {
+        candidates: [
+          {
+            message: `Free gift on orders $${gwpThresholdLabel}+`,
+            targets: [{ cartLine: { id: gwpLine.id } }],
+            value: {
+              percentage: { value: 100 },
+            },
+          },
+        ],
+        selectionStrategy: "ALL",
+      },
+    });
+  }
+
+  // When the BF promo is toggled on, its tables fully replace the normal reward
+  // tiers (Canada shoppers still get their own table). Otherwise fall back to
+  // the configured/default reward tiers.
+  const bfActive = isBfPromoActive(input);
+  const tiers = bfActive
+    ? isCanadaShopper(input)
+      ? BF_PROMO_CANADA_TIERS
+      : BF_PROMO_TIERS
+    : getConfiguredTiers(input);
   const tier = findMatchingTier(subtotal, tiers);
-  if (!tier) {
-    return { operations: [] };
-  }
+  if (tier) {
+    const thresholdLabel = Math.round(tier.minSubtotal).toLocaleString("en-US");
+    const rewardCode = bfActive ? tier.code : getRewardCode(tier, tiers);
+    const eligibleTargets = getEligibleCartLineTargets(
+      lines,
+      gwpLine ? gwpConfig.giftVariantId : null,
+    );
 
-  const thresholdLabel = Math.round(tier.minSubtotal).toLocaleString("en-US");
-  const rewardCode = getRewardCode(tier, tiers);
-  const eligibleTargets = getEligibleCartLineTargets(input?.cart?.lines || []);
-
-  if (eligibleTargets.length === 0) {
-    return { operations: [] };
-  }
-
-  return {
-    operations: [
-      {
+    if (eligibleTargets.length > 0) {
+      operations.push({
         productDiscountsAdd: {
           candidates: [
             {
@@ -136,7 +231,9 @@ export function cartLinesDiscountsGenerateRun(input) {
           ],
           selectionStrategy: "ALL",
         },
-      },
-    ],
-  };
+      });
+    }
+  }
+
+  return { operations };
 }

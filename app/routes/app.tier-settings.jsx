@@ -20,6 +20,7 @@ import {
   Badge,
   Divider,
   Box,
+  Checkbox,
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import {
@@ -60,12 +61,15 @@ export const loader = async ({ request, params }) => {
   const appMetafield = appInstallation?.config;
   const metafield = runtimeMetafield || appMetafield;
 
-  const tiers = [...(parseTierConfig(metafield?.value).tiers || DEFAULT_TIERS)].sort(
+  const parsedConfig = parseTierConfig(metafield?.value);
+  const tiers = [...(parsedConfig.tiers || DEFAULT_TIERS)].sort(
     (a, b) => b.minSubtotal - a.minSubtotal
   );
+  const bfPromoEnabled = parsedConfig?.bfPromo?.enabled === true;
 
   return json({
     tiers,
+    bfPromoEnabled,
     discountNodeId,
   });
 };
@@ -74,6 +78,7 @@ export const action = async ({ request, params }) => {
   const { admin } = await authenticate.admin(request);
   const formData = await request.formData();
   const tiersJson = formData.get("tiers");
+  const bfPromoEnabled = formData.get("bfPromoEnabled") === "true";
   const appInstallation = await getAppInstallationMetafields(admin);
   const setup = parseSetupConfig(appInstallation?.setup?.value);
   const discountNodeId =
@@ -106,7 +111,32 @@ export const action = async ({ request, params }) => {
 
   tiers.sort((a, b) => b.minSubtotal - a.minSubtotal);
 
-  const configValue = JSON.stringify({ tiers });
+  // Preserve any unknown top-level config keys (e.g. `gwp`) that may have been
+  // set directly via Shopify admin's metafield editor. Prefer the discount
+  // node metafield since that's the value the function actually reads at
+  // runtime; fall back to the app installation metafield.
+  const runtimeMetafield = discountNodeId
+    ? await getDiscountNodeMetafield(admin, discountNodeId)
+    : null;
+  const existingRaw =
+    runtimeMetafield?.value || appInstallation?.config?.value || null;
+  let existingConfig = {};
+  if (existingRaw) {
+    try {
+      const parsed = JSON.parse(existingRaw);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        existingConfig = parsed;
+      }
+    } catch {
+      existingConfig = {};
+    }
+  }
+
+  const configValue = JSON.stringify({
+    ...existingConfig,
+    tiers,
+    bfPromo: { ...(existingConfig.bfPromo || {}), enabled: bfPromoEnabled },
+  });
   const appInstallationId = appInstallation?.id;
 
   if (!appInstallationId) {
@@ -158,13 +188,18 @@ export const action = async ({ request, params }) => {
 };
 
 export default function TierSettings() {
-  const { tiers: savedTiers, discountNodeId } = useLoaderData();
+  const {
+    tiers: savedTiers,
+    bfPromoEnabled: savedBfPromoEnabled,
+    discountNodeId,
+  } = useLoaderData();
   const actionData = useActionData();
   const submit = useSubmit();
   const navigation = useNavigation();
   const isSaving = navigation.state === "submitting";
 
   const [tiers, setTiers] = useState(savedTiers);
+  const [bfPromoEnabled, setBfPromoEnabled] = useState(savedBfPromoEnabled);
   const [error, setError] = useState(null);
 
   const handleTierChange = useCallback(
@@ -210,8 +245,9 @@ export default function TierSettings() {
     setError(null);
     const formData = new FormData();
     formData.set("tiers", JSON.stringify(validTiers));
+    formData.set("bfPromoEnabled", bfPromoEnabled ? "true" : "false");
     submit(formData, { method: "POST" });
-  }, [tiers, submit]);
+  }, [tiers, bfPromoEnabled, submit]);
 
   const sortedTiers = [...tiers]
     .filter((tier) => tier.minSubtotal > 0 && tier.percentage > 0)
@@ -296,6 +332,54 @@ export default function TierSettings() {
             </Banner>
           </Layout.Section>
         )}
+
+        <Layout.Section>
+          <Card>
+            <BlockStack gap="400">
+              <InlineStack align="space-between" blockAlign="center">
+                <Text as="h2" variant="headingMd">
+                  BF Promo Override
+                </Text>
+                <Badge tone={bfPromoEnabled ? "success" : "new"}>
+                  {bfPromoEnabled ? "Active" : "Off"}
+                </Badge>
+              </InlineStack>
+              <Text as="p" variant="bodyMd" tone="subdued">
+                When enabled and saved, the promo tables below fully replace the
+                normal reward tiers (Canada shoppers use their own promo table).
+                The discount still applies only to eligible collection products,
+                evaluated against the full cart subtotal in USD. Turn off after
+                the promotion to restore the normal rewards.
+              </Text>
+              <Checkbox
+                label="Enable BF promo override"
+                checked={bfPromoEnabled}
+                onChange={(value) => setBfPromoEnabled(value)}
+              />
+              <DataTable
+                columnContentTypes={["text", "text", "text", "text"]}
+                headings={[
+                  "Code (label)",
+                  "Audience",
+                  "Cart Subtotal (USD)",
+                  "Discount",
+                ]}
+                rows={[
+                  ["BF10", "All except Canada", "$1,000 – $1,999.99", "10%"],
+                  ["BF20", "All except Canada", "$2,000 – $4,999.99", "20%"],
+                  ["BF25", "All except Canada", "$5,000 +", "25%"],
+                  ["BF10-CAN", "Canada", "$2,000 – $4,999.99", "10%"],
+                  ["BF15-CAN", "Canada", "$5,000 +", "15%"],
+                ]}
+              />
+              <Text as="p" variant="bodyMd" tone="subdued">
+                Reporting: the code shows as the discount line label on each
+                order (e.g. &ldquo;BF20: 20% off…&rdquo;). This is an automatic
+                discount, so Shopify cannot break out totals per code natively.
+              </Text>
+            </BlockStack>
+          </Card>
+        </Layout.Section>
 
         <Layout.Section>
           <Card>
