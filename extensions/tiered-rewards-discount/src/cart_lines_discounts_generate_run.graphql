@@ -2,7 +2,7 @@ query CartInput {
   cart {
     buyerIdentity {
       customer {
-        hasAnyTag(tags: ["Canada Shopper", "MD-CAN Shopper"])
+        hasAnyTag(tags: ["Canada Shopper", "CanadaShopper", "MD-CAN Shopper"])
       }
     }
     lines {
