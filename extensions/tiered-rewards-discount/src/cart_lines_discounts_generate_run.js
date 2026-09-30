@@ -91,6 +91,12 @@ function getConfiguredTiers(input) {
   }
 }
 
+// The Shopify Functions runtime has no locale data, so toLocaleString() drops
+// the thousands separator. Insert the commas manually instead.
+function formatWholeDollars(amount) {
+  return String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 function findMatchingTier(subtotal, tiers) {
   return tiers.find((tier) => subtotal >= tier.minSubtotal);
 }
@@ -192,7 +198,7 @@ export function cartLinesDiscountsGenerateRun(input) {
       : null;
 
   if (gwpLine) {
-    const gwpThresholdLabel = Math.round(gwpConfig.minSubtotalUsd).toLocaleString("en-US");
+    const gwpThresholdLabel = formatWholeDollars(gwpConfig.minSubtotalUsd);
     operations.push({
       productDiscountsAdd: {
         candidates: [
@@ -220,7 +226,7 @@ export function cartLinesDiscountsGenerateRun(input) {
     : getConfiguredTiers(input);
   const tier = findMatchingTier(subtotal, tiers);
   if (tier) {
-    const thresholdLabel = Math.round(tier.minSubtotal).toLocaleString("en-US");
+    const thresholdLabel = formatWholeDollars(tier.minSubtotal);
     const rewardCode = bfActive ? tier.code : getRewardCode(tier, tiers);
     const eligibleTargets = getEligibleCartLineTargets(
       lines,
