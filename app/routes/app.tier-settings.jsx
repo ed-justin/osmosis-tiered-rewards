@@ -345,9 +345,10 @@ export default function TierSettings() {
                 </Badge>
               </InlineStack>
               <Text as="p" variant="bodyMd" tone="subdued">
-                This promo runs <strong>automatically from 12:00 AM MDT on
-                7/9 through 11:59 PM MDT on 7/14</strong> — no action needed for
-                go-live. During that window the tables below fully replace the
+                This promo runs <strong>automatically</strong> during two
+                windows: <strong>All Access, 12:00 AM MT 10/12 through 11:59 PM
+                MT 10/16</strong> and <strong>Encore, 12:00 AM MT 11/16 through
+                11:59 PM MT 11/18</strong> — no action needed for go-live. During that window the tables below fully replace the
                 normal reward tiers (Canada shoppers use their own promo table),
                 applying only to eligible collection products, evaluated against
                 the full cart subtotal in USD.

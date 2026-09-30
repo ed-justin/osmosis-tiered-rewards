@@ -31,11 +31,16 @@ query CartInput {
   }
   shop {
     localTime {
-      # BF promo window, expressed in the store's timezone (Mountain Time).
-      # 12:00 AM MDT 7/9 through 11:59 PM MDT 7/14, 2026.
+      # BF promo windows, expressed in the store's timezone (Mountain Time).
+      # All Access: 12:00 AM MT 10/12 through 11:59 PM MT 10/16, 2026.
       bfPromoWindow: dateTimeBetween(
-        startDateTime: "2026-07-09T00:00:00"
-        endDateTime: "2026-07-14T23:59:59"
+        startDateTime: "2026-10-12T00:00:00"
+        endDateTime: "2026-10-16T23:59:59"
+      )
+      # Encore: 12:00 AM MT 11/16 through 11:59 PM MT 11/18, 2026.
+      bfEncoreWindow: dateTimeBetween(
+        startDateTime: "2026-11-16T00:00:00"
+        endDateTime: "2026-11-18T23:59:59"
       )
     }
   }

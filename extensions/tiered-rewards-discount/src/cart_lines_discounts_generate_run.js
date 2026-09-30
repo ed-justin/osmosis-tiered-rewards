@@ -39,10 +39,13 @@ function isBfPromoManuallyEnabled(input) {
   }
 }
 
-// The promo is active when EITHER its scheduled window is live (evaluated in
-// the store's timezone via the input query) OR the manual toggle is on.
+// The promo is active when EITHER one of its scheduled windows is live
+// (evaluated in the store's timezone via the input query) OR the manual toggle
+// is on.
 function isBfPromoActive(input) {
-  const scheduledActive = input?.shop?.localTime?.bfPromoWindow === true;
+  const localTime = input?.shop?.localTime;
+  const scheduledActive =
+    localTime?.bfPromoWindow === true || localTime?.bfEncoreWindow === true;
   return scheduledActive || isBfPromoManuallyEnabled(input);
 }
 
